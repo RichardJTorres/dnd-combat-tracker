@@ -1,0 +1,12 @@
+.env
+*.db
+.claude/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+dist/
+*.egg-info/
+web/node_modules/
+web/dist/
+.DS_Store
