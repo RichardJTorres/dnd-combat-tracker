@@ -96,6 +96,7 @@ export default function Bestiary() {
   // AI generation state
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [aiCr, setAiCr] = useState<number>(1);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiPreview, setAiPreview] = useState<Partial<Creature> | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -187,7 +188,7 @@ export default function Bestiary() {
       const r = await fetch("/api/ai/generate-monster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: aiPrompt }),
+        body: JSON.stringify({ prompt: aiPrompt, cr: aiCr }),
       });
       if (!r.ok) {
         const body = await r.json();
@@ -292,9 +293,21 @@ export default function Bestiary() {
           </button>
           {showAiPanel && (
             <div className="p-2 bg-gray-900 space-y-2">
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Challenge Rating</div>
+                <select
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                  value={aiCr}
+                  onChange={(e) => setAiCr(parseFloat(e.target.value))}
+                >
+                  {CR_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
               <textarea
                 className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none h-24"
-                placeholder="Describe your monster... e.g. 'A CR 5 undead pirate captain who commands ghostly crew and wields a cursed cutlass'"
+                placeholder="Describe your monster... e.g. 'An undead pirate captain who commands ghostly crew and wields a cursed cutlass'"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />

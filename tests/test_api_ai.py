@@ -32,7 +32,7 @@ def test_generate_monster_success(client):
     mock_backend = MagicMock()
     with patch("dnd_combat_tracker.api.routers.ai.get_backend", return_value=mock_backend), \
          patch("dnd_combat_tracker.api.routers.ai.generate_monster", return_value=GENERATED_CREATURE):
-        r = client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin"})
+        r = client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin", "cr": 1.0})
 
     assert r.status_code == 200
     body = r.json()
@@ -44,27 +44,48 @@ def test_generate_monster_response_has_required_fields(client):
     mock_backend = MagicMock()
     with patch("dnd_combat_tracker.api.routers.ai.get_backend", return_value=mock_backend), \
          patch("dnd_combat_tracker.api.routers.ai.generate_monster", return_value=GENERATED_CREATURE):
-        r = client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin"})
+        r = client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin", "cr": 1.0})
 
     body = r.json()
     for field in ("name", "cr", "hp", "ac", "size", "creature_type"):
         assert field in body, f"Missing field: {field}"
 
 
+def test_generate_monster_cr_passed_to_generator(client):
+    """The endpoint must forward the requested CR to generate_monster."""
+    mock_backend = MagicMock()
+    with patch("dnd_combat_tracker.api.routers.ai.get_backend", return_value=mock_backend) as _, \
+         patch("dnd_combat_tracker.api.routers.ai.generate_monster", return_value=GENERATED_CREATURE) as mock_gen:
+        client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin", "cr": 1.0})
+    mock_gen.assert_called_once()
+    _, kwargs = mock_gen.call_args
+    assert kwargs.get("cr") == 1.0 or mock_gen.call_args[0][2] == 1.0
+
+
 def test_generate_monster_empty_prompt_returns_422(client):
-    r = client.post("/api/ai/generate-monster", json={"prompt": ""})
+    r = client.post("/api/ai/generate-monster", json={"prompt": "", "cr": 1})
     assert r.status_code == 422
 
 
 def test_generate_monster_whitespace_prompt_returns_422(client):
-    r = client.post("/api/ai/generate-monster", json={"prompt": "   "})
+    r = client.post("/api/ai/generate-monster", json={"prompt": "   ", "cr": 1})
+    assert r.status_code == 422
+
+
+def test_generate_monster_missing_cr_returns_422(client):
+    r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin"})
+    assert r.status_code == 422
+
+
+def test_generate_monster_invalid_cr_returns_422(client):
+    r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin", "cr": 99})
     assert r.status_code == 422
 
 
 def test_generate_monster_no_api_key_returns_503(client):
     with patch("dnd_combat_tracker.api.routers.ai.get_backend",
                side_effect=ValueError("Anthropic API key not configured")):
-        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin"})
+        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin", "cr": 1})
     assert r.status_code == 503
     assert "API key" in r.json()["detail"]
 
@@ -72,7 +93,7 @@ def test_generate_monster_no_api_key_returns_503(client):
 def test_generate_monster_unknown_provider_returns_503(client):
     with patch("dnd_combat_tracker.api.routers.ai.get_backend",
                side_effect=ValueError("Unknown provider: 'fake'")):
-        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin"})
+        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin", "cr": 1})
     assert r.status_code == 503
 
 
@@ -82,7 +103,7 @@ def test_generate_monster_malformed_llm_output_returns_502(client):
     with patch("dnd_combat_tracker.api.routers.ai.get_backend", return_value=mock_backend), \
          patch("dnd_combat_tracker.api.routers.ai.generate_monster",
                side_effect=MonsterGenerationError("LLM returned non-JSON")):
-        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin"})
+        r = client.post("/api/ai/generate-monster", json={"prompt": "a goblin", "cr": 1})
     assert r.status_code == 502
     assert "non-JSON" in r.json()["detail"]
 
@@ -92,7 +113,7 @@ def test_generate_monster_does_not_save_to_db(client):
     mock_backend = MagicMock()
     with patch("dnd_combat_tracker.api.routers.ai.get_backend", return_value=mock_backend), \
          patch("dnd_combat_tracker.api.routers.ai.generate_monster", return_value=GENERATED_CREATURE):
-        client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin"})
+        client.post("/api/ai/generate-monster", json={"prompt": "a fire goblin", "cr": 1.0})
 
     # Creature should NOT be in the bestiary
     r = client.get("/api/creatures")

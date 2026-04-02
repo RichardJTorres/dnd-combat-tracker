@@ -147,7 +147,7 @@ MINIMAL_MONSTER = {
 def test_generate_monster_plain_json():
     from dnd_combat_tracker.ai_generator import generate_monster
     backend = _mock_backend(json.dumps(MINIMAL_MONSTER))
-    result = generate_monster(backend, "a small goblin")
+    result = generate_monster(backend, "a small goblin", cr=0.25)
     assert result["name"] == "Test Goblin"
     assert result["cr"] == 0.25
     assert result["source"] == "AI Generated"
@@ -156,18 +156,27 @@ def test_generate_monster_plain_json():
 def test_generate_monster_calls_stream_turn_once():
     from dnd_combat_tracker.ai_generator import generate_monster, SYSTEM_PROMPT
     backend = _mock_backend(json.dumps(MINIMAL_MONSTER))
-    generate_monster(backend, "a fire goblin")
+    generate_monster(backend, "a fire goblin", cr=0.25)
     backend.stream_turn.assert_called_once()
     call_args = backend.stream_turn.call_args
     assert call_args[0][0] == SYSTEM_PROMPT
     assert "fire goblin" in call_args[0][1]
 
 
+def test_generate_monster_cr_injected_into_user_message():
+    """The requested CR must appear explicitly in the message sent to the LLM."""
+    from dnd_combat_tracker.ai_generator import generate_monster
+    backend = _mock_backend(json.dumps(MINIMAL_MONSTER))
+    generate_monster(backend, "a fire goblin", cr=0.25)
+    user_message = backend.stream_turn.call_args[0][1]
+    assert "1/4" in user_message or "0.25" in user_message
+
+
 def test_generate_monster_strips_json_fence():
     from dnd_combat_tracker.ai_generator import generate_monster
     raw = f"```json\n{json.dumps(MINIMAL_MONSTER)}\n```"
     backend = _mock_backend(raw)
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert result["name"] == "Test Goblin"
 
 
@@ -175,7 +184,7 @@ def test_generate_monster_strips_plain_fence():
     from dnd_combat_tracker.ai_generator import generate_monster
     raw = f"```\n{json.dumps(MINIMAL_MONSTER)}\n```"
     backend = _mock_backend(raw)
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert result["name"] == "Test Goblin"
 
 
@@ -183,8 +192,54 @@ def test_generate_monster_source_forced_to_ai_generated():
     from dnd_combat_tracker.ai_generator import generate_monster
     monster = {**MINIMAL_MONSTER, "source": "Monster Manual"}
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert result["source"] == "AI Generated"
+
+
+# ---------------------------------------------------------------------------
+# CR enforcement
+# ---------------------------------------------------------------------------
+
+def test_generate_monster_cr_overrides_llm_value():
+    """If the LLM returns the wrong CR, the requested CR must win."""
+    from dnd_combat_tracker.ai_generator import generate_monster
+    monster = {**MINIMAL_MONSTER, "cr": 5}  # LLM hallucinated CR 5
+    backend = _mock_backend(json.dumps(monster))
+    result = generate_monster(backend, "a goblin", cr=0.25)
+    assert result["cr"] == 0.25
+
+
+def test_generate_monster_cr_preserved_when_correct():
+    from dnd_combat_tracker.ai_generator import generate_monster
+    backend = _mock_backend(json.dumps(MINIMAL_MONSTER))
+    result = generate_monster(backend, "a goblin", cr=0.25)
+    assert result["cr"] == 0.25
+
+
+def test_generate_monster_cr_integer():
+    from dnd_combat_tracker.ai_generator import generate_monster
+    monster = {**MINIMAL_MONSTER, "cr": 5}
+    backend = _mock_backend(json.dumps(monster))
+    result = generate_monster(backend, "a troll", cr=5)
+    assert result["cr"] == 5
+
+
+def test_generate_monster_cr_zero():
+    from dnd_combat_tracker.ai_generator import generate_monster
+    monster = {**MINIMAL_MONSTER, "cr": 0}
+    backend = _mock_backend(json.dumps(monster))
+    result = generate_monster(backend, "a harmless creature", cr=0)
+    assert result["cr"] == 0
+
+
+def test_generate_monster_user_message_contains_balance_targets():
+    """The user message sent to the LLM must include HP/AC/attack targets for the CR."""
+    from dnd_combat_tracker.ai_generator import generate_monster
+    backend = _mock_backend(json.dumps({**MINIMAL_MONSTER, "cr": 5}))
+    generate_monster(backend, "a troll", cr=5)
+    user_message = backend.stream_turn.call_args[0][1]
+    # CR 5 targets: HP 131-145, AC 15, attack +6, damage 33-38
+    assert "131" in user_message or "145" in user_message
 
 
 # ---------------------------------------------------------------------------
@@ -199,8 +254,7 @@ def test_generate_monster_coerces_nested_traits():
         "traits": [{"name": "Nimble Escape", "description": "Disengage as bonus action."}],
     }
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
-    # Must be a string (JSON-encoded)
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert isinstance(result["traits"], str)
     parsed = json.loads(result["traits"])
     assert parsed[0]["name"] == "Nimble Escape"
@@ -213,7 +267,7 @@ def test_generate_monster_coerces_nested_actions():
         "actions": [{"name": "Scimitar", "description": "+4 to hit."}],
     }
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert isinstance(result["actions"], str)
 
 
@@ -221,7 +275,7 @@ def test_generate_monster_coerces_nested_saving_throws():
     from dnd_combat_tracker.ai_generator import generate_monster
     monster = {**MINIMAL_MONSTER, "saving_throws": {"dex": 4, "wis": 2}}
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert isinstance(result["saving_throws"], str)
     assert json.loads(result["saving_throws"]) == {"dex": 4, "wis": 2}
 
@@ -230,7 +284,7 @@ def test_generate_monster_empty_list_becomes_none():
     from dnd_combat_tracker.ai_generator import generate_monster
     monster = {**MINIMAL_MONSTER, "legendary_actions": []}
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert result.get("legendary_actions") is None
 
 
@@ -238,7 +292,7 @@ def test_generate_monster_empty_string_becomes_none():
     from dnd_combat_tracker.ai_generator import generate_monster
     monster = {**MINIMAL_MONSTER, "damage_immunities": ""}
     backend = _mock_backend(json.dumps(monster))
-    result = generate_monster(backend, "a goblin")
+    result = generate_monster(backend, "a goblin", cr=0.25)
     assert result.get("damage_immunities") is None
 
 
@@ -250,14 +304,14 @@ def test_generate_monster_non_json_raises():
     from dnd_combat_tracker.ai_generator import generate_monster, MonsterGenerationError
     backend = _mock_backend("Sorry, I cannot create that monster.")
     with pytest.raises(MonsterGenerationError, match="non-JSON"):
-        generate_monster(backend, "a goblin")
+        generate_monster(backend, "a goblin", cr=1)
 
 
 def test_generate_monster_json_array_raises():
     from dnd_combat_tracker.ai_generator import generate_monster, MonsterGenerationError
     backend = _mock_backend(json.dumps([{"name": "Goblin"}]))
     with pytest.raises(MonsterGenerationError, match="not an object"):
-        generate_monster(backend, "a goblin")
+        generate_monster(backend, "a goblin", cr=1)
 
 
 def test_generate_monster_missing_name_raises():
@@ -265,7 +319,7 @@ def test_generate_monster_missing_name_raises():
     monster = {k: v for k, v in MINIMAL_MONSTER.items() if k != "name"}
     backend = _mock_backend(json.dumps(monster))
     with pytest.raises(MonsterGenerationError, match="no name"):
-        generate_monster(backend, "a goblin")
+        generate_monster(backend, "a goblin", cr=0.25)
 
 
 def test_generate_monster_empty_name_raises():
@@ -273,4 +327,4 @@ def test_generate_monster_empty_name_raises():
     monster = {**MINIMAL_MONSTER, "name": ""}
     backend = _mock_backend(json.dumps(monster))
     with pytest.raises(MonsterGenerationError, match="no name"):
-        generate_monster(backend, "a goblin")
+        generate_monster(backend, "a goblin", cr=0.25)
