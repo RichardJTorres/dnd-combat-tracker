@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from dnd_combat_tracker.config import settings, VALID_PROVIDERS
+from dnd_combat_tracker.backends import VALID_IMAGE_PROVIDERS
 from dnd_combat_tracker.db.engine import get_session
 from dnd_combat_tracker.db import settings as settings_db
 
@@ -99,4 +100,80 @@ def _fetch_models(provider: str) -> list[dict]:
         return OpenAIBackend.fetch_models(settings.openai_api_key)
     if provider == "ollama":
         return OllamaBackend.fetch_models(settings.ollama_host)
+    return []
+
+
+# ── Image generation settings ────────────────────────────────────────────────
+
+class ImageSettingsBody(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+
+
+@router.get("/image")
+def get_image_settings(session: Session = Depends(get_session)):
+    provider = settings_db.get(session, "image_provider", "")
+    model = settings_db.get(session, f"{provider}_image_model") if provider else None
+    return {"provider": provider, "model": model}
+
+
+@router.put("/image")
+def put_image_settings(body: ImageSettingsBody, session: Session = Depends(get_session)):
+    if body.provider is not None:
+        if body.provider and body.provider not in VALID_IMAGE_PROVIDERS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"image provider must be one of {sorted(VALID_IMAGE_PROVIDERS)} or empty",
+            )
+        settings_db.set(session, "image_provider", body.provider)
+
+    if body.model is not None:
+        provider = body.provider or settings_db.get(session, "image_provider", "")
+        if provider:
+            settings_db.set(session, f"{provider}_image_model", body.model)
+
+    provider = settings_db.get(session, "image_provider", "")
+    model = settings_db.get(session, f"{provider}_image_model") if provider else None
+    return {"provider": provider, "model": model}
+
+
+@router.get("/image-providers")
+def get_image_providers():
+    """Return each image provider and whether it is configured/available."""
+    return [
+        {
+            "id": "gemini",
+            "label": "Gemini Image (nanobanana)",
+            "configured": bool(settings.gemini_api_key),
+        },
+        {
+            "id": "forge",
+            "label": "Stable Diffusion Forge (local)",
+            "configured": _forge_image_available(),
+        },
+    ]
+
+
+@router.get("/image-providers/{provider}/models")
+def get_image_models(provider: str):
+    if provider not in VALID_IMAGE_PROVIDERS:
+        raise HTTPException(status_code=404, detail=f"Unknown image provider: {provider}")
+    return _fetch_image_models(provider)
+
+
+def _forge_image_available() -> bool:
+    import httpx
+    try:
+        httpx.get(f"{settings.forge_image_host}/sdapi/v1/sd-models", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+def _fetch_image_models(provider: str) -> list[dict]:
+    from dnd_combat_tracker.backends import GeminiImageBackend, ForgeImageBackend
+    if provider == "gemini":
+        return GeminiImageBackend.fetch_models(settings.gemini_api_key)
+    if provider == "forge":
+        return ForgeImageBackend.fetch_models(settings.forge_image_host)
     return []

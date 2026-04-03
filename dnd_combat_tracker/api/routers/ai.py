@@ -1,12 +1,15 @@
-"""AI monster generation endpoint."""
+"""AI monster generation endpoints."""
+
+import base64
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from dnd_combat_tracker.db.engine import get_session
-from dnd_combat_tracker.backends import get_backend
-from dnd_combat_tracker.ai_generator import generate_monster, MonsterGenerationError, VALID_CRS
+from dnd_combat_tracker.db.models import Creature
+from dnd_combat_tracker.backends import get_backend, get_image_backend
+from dnd_combat_tracker.ai_generator import generate_monster, generate_monster_art, MonsterGenerationError, VALID_CRS
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -46,3 +49,37 @@ def generate_monster_endpoint(
         return generate_monster(backend, body.prompt, cr=body.cr)
     except MonsterGenerationError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
+
+
+class ArtRequest(BaseModel):
+    creature_id: int
+
+
+@router.post("/generate-monster-art")
+def generate_monster_art_endpoint(
+    body: ArtRequest,
+    session: Session = Depends(get_session),
+):
+    """
+    Generate grimdark art for an existing creature and persist it.
+    Returns { "art_data": "<base64 PNG>" }.
+    """
+    creature = session.exec(select(Creature).where(Creature.id == body.creature_id)).first()
+    if creature is None:
+        raise HTTPException(status_code=404, detail="Creature not found")
+
+    try:
+        image_backend = get_image_backend(session)
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    try:
+        png_bytes = generate_monster_art(image_backend, creature)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {exc}")
+
+    creature.art_data = base64.b64encode(png_bytes).decode()
+    session.add(creature)
+    session.commit()
+
+    return {"art_data": creature.art_data}
