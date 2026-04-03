@@ -93,6 +93,14 @@ export default function Bestiary() {
   const [showImport, setShowImport] = useState(false);
   const apiDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // AI generation state
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiCr, setAiCr] = useState<number>(1);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPreview, setAiPreview] = useState<Partial<Creature> | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   async function load() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -171,6 +179,48 @@ export default function Bestiary() {
     }
   }
 
+  async function generateWithAi() {
+    if (!aiPrompt.trim()) return;
+    setAiGenerating(true);
+    setAiError(null);
+    setAiPreview(null);
+    try {
+      const r = await fetch("/api/ai/generate-monster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt, cr: aiCr }),
+      });
+      if (!r.ok) {
+        const body = await r.json();
+        setAiError(body.detail ?? "Generation failed");
+        return;
+      }
+      const creature = await r.json();
+      setAiPreview(creature);
+      setSelected(null);
+      setEditing(null);
+    } catch {
+      setAiError("Network error — is the server running?");
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
+  async function saveAiCreature() {
+    if (!aiPreview) return;
+    const r = await fetch("/api/creatures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(aiPreview),
+    });
+    const saved = await r.json();
+    setAiPreview(null);
+    setAiPrompt("");
+    setShowAiPanel(false);
+    load();
+    setSelected(saved);
+  }
+
   return (
     <div className="flex gap-4 h-full">
       {/* List panel */}
@@ -232,6 +282,57 @@ export default function Bestiary() {
             </div>
           )}
         </div>
+        {/* AI monster generation */}
+        <div className="border border-gray-700 rounded overflow-hidden">
+          <button
+            onClick={() => { setShowAiPanel((v) => !v); setAiPreview(null); setAiError(null); }}
+            className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 text-sm text-gray-300"
+          >
+            <span>✨ Generate with AI</span>
+            <span className="text-gray-500">{showAiPanel ? "▲" : "▼"}</span>
+          </button>
+          {showAiPanel && (
+            <div className="p-2 bg-gray-900 space-y-2">
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Challenge Rating</div>
+                <select
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                  value={aiCr}
+                  onChange={(e) => setAiCr(parseFloat(e.target.value))}
+                >
+                  {CR_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none h-24"
+                placeholder="Describe your monster... e.g. 'An undead pirate captain who commands ghostly crew and wields a cursed cutlass'"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+              {aiError && (
+                <p className="text-xs text-red-400">{aiError}</p>
+              )}
+              <button
+                onClick={generateWithAi}
+                disabled={aiGenerating || !aiPrompt.trim()}
+                className="w-full bg-red-800 hover:bg-red-700 disabled:opacity-40 text-white text-sm px-3 py-1.5 rounded font-medium"
+              >
+                {aiGenerating ? "Generating..." : aiPreview ? "Regenerate" : "Generate Monster"}
+              </button>
+              {aiPreview && (
+                <button
+                  onClick={saveAiCreature}
+                  className="w-full bg-green-800 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded font-medium"
+                >
+                  ✓ Save to Bestiary
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <select
           className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
           value={typeFilter}
@@ -279,6 +380,20 @@ export default function Bestiary() {
             onSave={save}
             onCancel={() => { setEditing(null); setIsNew(false); }}
           />
+        ) : aiPreview ? (
+          <div>
+            <div className="flex items-center gap-2 mb-4 bg-red-950/40 border border-red-800 rounded px-3 py-2 text-sm">
+              <span className="text-red-400">✨</span>
+              <span className="text-red-200 font-medium">AI Preview — not yet saved</span>
+              <span className="text-gray-500 ml-auto text-xs">Tweak your prompt and regenerate, or save when ready.</span>
+            </div>
+            <CreatureDetail
+              creature={aiPreview as Creature}
+              onEdit={() => { setEditing({ ...aiPreview }); setIsNew(true); setAiPreview(null); }}
+              onDelete={() => { setAiPreview(null); }}
+              onSave={saveAiCreature}
+            />
+          </div>
         ) : selected ? (
           <CreatureDetail
             creature={selected}
@@ -299,10 +414,12 @@ function CreatureDetail({
   creature,
   onEdit,
   onDelete,
+  onSave,
 }: {
   creature: Creature;
   onEdit: () => void;
   onDelete: () => void;
+  onSave?: () => void;
 }) {
   const stats: [string, number][] = [
     ["STR", creature.strength],
@@ -324,18 +441,28 @@ function CreatureDetail({
           </p>
         </div>
         <div className="flex gap-2">
+          {onSave && (
+            <button
+              onClick={onSave}
+              className="bg-green-800 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded font-medium"
+            >
+              ✓ Save to Bestiary
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded"
           >
-            Edit
+            {onSave ? "Edit before saving" : "Edit"}
           </button>
-          <button
-            onClick={onDelete}
-            className="bg-red-900 hover:bg-red-800 text-white text-sm px-3 py-1.5 rounded"
-          >
-            Delete
-          </button>
+          {!onSave && (
+            <button
+              onClick={onDelete}
+              className="bg-red-900 hover:bg-red-800 text-white text-sm px-3 py-1.5 rounded"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
