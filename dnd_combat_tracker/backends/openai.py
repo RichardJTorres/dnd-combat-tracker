@@ -69,3 +69,15 @@ class OpenAIBackend(BaseBackend):
 
         self._history.append({"role": "assistant", "content": response_text})
         return response_text
+
+    def parse_document(self, pdf_bytes: bytes, prompt: str) -> str:
+        from .base import _pdf_to_text
+        text = _pdf_to_text(pdf_bytes)
+        response = self._client.chat.completions.create(
+            model=self._model,
+            max_tokens=1024,
+            messages=[
+                {"role": "user", "content": f"Character sheet text:\n\n{text}\n\n{prompt}"},
+            ],
+        )
+        return response.choices[0].message.content or ""

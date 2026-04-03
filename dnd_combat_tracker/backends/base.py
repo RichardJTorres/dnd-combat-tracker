@@ -1,7 +1,15 @@
 """Abstract base class for LLM backends."""
 
+import io
 from abc import ABC, abstractmethod
-from typing import Callable, Iterator
+from typing import Callable
+
+
+def _pdf_to_text(pdf_bytes: bytes) -> str:
+    """Extract plain text from a PDF using pypdf (fallback for non-native PDF backends)."""
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    return "\n".join(page.extract_text() or "" for page in reader.pages).strip()
 
 
 class BaseBackend(ABC):
@@ -30,4 +38,12 @@ class BaseBackend(ABC):
         """
         Send user_input to the LLM, call on_token(chunk) for each streamed
         text chunk, and return the full response text.
+        """
+
+    @abstractmethod
+    def parse_document(self, pdf_bytes: bytes, prompt: str) -> str:
+        """
+        Send a PDF document and a prompt, return the model's text response.
+        Backends with native PDF support pass the raw bytes; others extract
+        text first via _pdf_to_text().
         """

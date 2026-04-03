@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Character {
   id: number;
@@ -70,6 +70,9 @@ export default function Party() {
   const [selected, setSelected] = useState<Character | null>(null);
   const [editing, setEditing] = useState<Partial<Character> | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     const r = await fetch("/api/characters");
@@ -105,8 +108,46 @@ export default function Party() {
     setSelected(null);
   }
 
+  async function handlePdfImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so the same file can be re-selected
+    e.target.value = "";
+
+    setImporting(true);
+    setImportError(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const r = await fetch("/api/characters/import/pdf", { method: "POST", body: form });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({ detail: "Import failed" }));
+        setImportError(err.detail ?? "Import failed");
+        return;
+      }
+      const data = await r.json();
+      setEditing({ ...BLANK, ...data });
+      setIsNew(true);
+      setSelected(null);
+    } catch {
+      setImportError("Network error during import");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="flex gap-4">
+      {/* Hidden PDF file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf"
+        className="hidden"
+        onChange={handlePdfImport}
+      />
+
       {/* Character list */}
       <div className="w-64 flex-shrink-0 flex flex-col gap-3">
         <button
@@ -115,6 +156,16 @@ export default function Party() {
         >
           + Add Character
         </button>
+        <button
+          onClick={() => { setImportError(null); fileInputRef.current?.click(); }}
+          disabled={importing}
+          className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white text-sm px-3 py-2 rounded font-medium"
+        >
+          {importing ? "Parsing PDF…" : "Import from PDF"}
+        </button>
+        {importError && (
+          <p className="text-red-400 text-xs px-1">{importError}</p>
+        )}
         <div className="space-y-2">
           {characters.length === 0 && (
             <p className="text-gray-500 text-sm text-center py-8">
