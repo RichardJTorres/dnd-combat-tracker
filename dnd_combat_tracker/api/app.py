@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from dnd_combat_tracker.db.engine import init_db
-from dnd_combat_tracker.api.routers import status, creatures, characters, encounters, combat, dnd_api, settings
+from dnd_combat_tracker.api.routers import status, creatures, characters, encounters, combat, dnd_api, settings, ai
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.include_router(encounters.router, prefix="/api")
 app.include_router(combat.router, prefix="/api")
 app.include_router(dnd_api.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 # Serve the built React frontend in production
 _dist = os.path.join(os.path.dirname(__file__), "..", "..", "web", "dist")

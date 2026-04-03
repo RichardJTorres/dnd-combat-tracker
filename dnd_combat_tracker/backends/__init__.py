@@ -4,33 +4,51 @@ from .gemini import GeminiBackend
 from .openai import OpenAIBackend
 from .ollama import OllamaBackend
 
-__all__ = ["BaseBackend", "ClaudeBackend", "GeminiBackend", "OpenAIBackend", "OllamaBackend", "get_backend"]
+from dnd_combat_tracker.config import settings, VALID_PROVIDERS
+from dnd_combat_tracker.db import settings as settings_db
+
+__all__ = [
+    "BaseBackend",
+    "ClaudeBackend",
+    "GeminiBackend",
+    "OpenAIBackend",
+    "OllamaBackend",
+    "get_backend",
+]
 
 
 def get_backend(session) -> BaseBackend:
-    """Return the configured backend using provider/model from app settings."""
-    from dnd_combat_tracker.config import settings
-    from dnd_combat_tracker.db import settings as settings_db
-
+    """
+    Instantiate and return the configured LLM backend using the provider and
+    model persisted in the DB settings. Raises ValueError if the provider is
+    unknown or the required API key is missing.
+    """
     provider = settings_db.get(session, "provider", "claude")
-    model = settings_db.get(session, f"{provider}_model") or None
+
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(f"Unknown provider: {provider!r}")
+
+    model = settings_db.get(session, f"{provider}_model")
 
     if provider == "claude":
         if not settings.anthropic_api_key:
-            raise ValueError("Anthropic API key not configured — add ANTHROPIC_API_KEY to .env")
-        kw = {"model": model} if model else {}
-        return ClaudeBackend(api_key=settings.anthropic_api_key, **kw)
+            raise ValueError("Anthropic API key not configured (set ANTHROPIC_API_KEY)")
+        return ClaudeBackend(api_key=settings.anthropic_api_key, model=model)
+
     if provider == "gemini":
         if not settings.gemini_api_key:
-            raise ValueError("Gemini API key not configured — add GEMINI_API_KEY to .env")
-        kw = {"model": model} if model else {}
-        return GeminiBackend(api_key=settings.gemini_api_key, **kw)
+            raise ValueError("Gemini API key not configured (set GEMINI_API_KEY)")
+        return GeminiBackend(api_key=settings.gemini_api_key, model=model)
+
     if provider == "openai":
         if not settings.openai_api_key:
-            raise ValueError("OpenAI API key not configured — add OPENAI_API_KEY to .env")
-        kw = {"model": model} if model else {}
-        return OpenAIBackend(api_key=settings.openai_api_key, **kw)
+            raise ValueError("OpenAI API key not configured (set OPENAI_API_KEY)")
+        return OpenAIBackend(api_key=settings.openai_api_key, model=model)
+
     if provider == "ollama":
-        kw = {"model": model} if model else {}
-        return OllamaBackend(**kw, host=settings.ollama_host)
-    raise ValueError(f"Unknown provider: {provider}")
+        return OllamaBackend(
+            model=model or settings.ollama_model,
+            host=settings.ollama_host,
+        )
+
+    raise ValueError(f"Unhandled provider: {provider!r}")
