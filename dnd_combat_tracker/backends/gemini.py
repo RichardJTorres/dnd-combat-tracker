@@ -71,3 +71,18 @@ class GeminiBackend(BaseBackend):
             types.Content(role="model", parts=[types.Part.from_text(text=response_text)])
         )
         return response_text
+
+    def parse_document(self, pdf_bytes: bytes, prompt: str) -> str:
+        response = self._client.models.generate_content(
+            model=self._model,
+            contents=[
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                        types.Part.from_text(text=prompt),
+                    ],
+                )
+            ],
+        )
+        return response.text

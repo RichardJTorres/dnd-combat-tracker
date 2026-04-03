@@ -1,5 +1,6 @@
 """Anthropic Claude backend."""
 
+import base64
 import time
 from typing import Callable
 
@@ -62,3 +63,27 @@ class ClaudeBackend(BaseBackend):
 
         self._history.append({"role": "assistant", "content": response_text})
         return response_text
+
+    def parse_document(self, pdf_bytes: bytes, prompt: str) -> str:
+        b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+        message = self._client.messages.create(
+            model=self._model,
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "application/pdf",
+                                "data": b64,
+                            },
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+        )
+        return message.content[0].text

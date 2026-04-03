@@ -72,3 +72,20 @@ class OllamaBackend(BaseBackend):
 
         self._history.append({"role": "assistant", "content": response_text})
         return response_text
+
+    def parse_document(self, pdf_bytes: bytes, prompt: str) -> str:
+        from .base import _pdf_to_text
+        text = _pdf_to_text(pdf_bytes)
+        with httpx.Client(timeout=120) as client:
+            resp = client.post(
+                f"{self._host}/api/chat",
+                json={
+                    "model": self._model,
+                    "messages": [
+                        {"role": "user", "content": f"Character sheet text:\n\n{text}\n\n{prompt}"},
+                    ],
+                    "stream": False,
+                },
+            )
+        resp.raise_for_status()
+        return resp.json()["message"]["content"]
