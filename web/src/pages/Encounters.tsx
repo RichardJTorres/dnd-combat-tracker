@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { calculateDifficulty, DifficultyResult, DifficultyTier } from "../utils/encounterDifficulty";
 
 interface Encounter {
   id: number;
@@ -31,6 +32,16 @@ interface Participant {
   creature_id: number | null;
   character_id: number | null;
   quantity: number;
+}
+
+function difficultyStyles(tier: DifficultyTier): string {
+  switch (tier) {
+    case "Trivial": return "bg-parchment-300 border-leather-500 text-ink-600";
+    case "Easy":    return "bg-green-100 border-green-500 text-green-800";
+    case "Medium":  return "bg-yellow-100 border-yellow-500 text-yellow-800";
+    case "Hard":    return "bg-orange-100 border-orange-500 text-orange-800";
+    case "Deadly":  return "bg-red-100 border-red-600 text-red-900";
+  }
 }
 
 function crLabel(cr: number): string {
@@ -173,6 +184,24 @@ export default function Encounters({
     onLaunchCombat(data.session.id);
   }
 
+  const dangerRating: DifficultyResult | null = (() => {
+    const characterLevels = participants
+      .filter((p) => p.participant_type === "character")
+      .map((p) => characters.find((c) => c.id === p.character_id)?.level)
+      .filter((l): l is number => l !== undefined);
+
+    const creatureEntries = participants
+      .filter((p) => p.participant_type === "creature")
+      .map((p) => {
+        const cr = creatures.find((c) => c.id === p.creature_id)?.cr;
+        return cr !== undefined ? { cr, quantity: p.quantity } : null;
+      })
+      .filter((e): e is { cr: number; quantity: number } => e !== null);
+
+    if (characterLevels.length === 0 || creatureEntries.length === 0) return null;
+    return calculateDifficulty({ characterLevels, creatures: creatureEntries });
+  })();
+
   function participantLabel(p: Participant): string {
     if (p.participant_type === "creature") {
       const c = creatures.find((c) => c.id === p.creature_id);
@@ -248,6 +277,19 @@ export default function Encounters({
                 </button>
               </div>
             </div>
+
+            {/* Danger Rating */}
+            {dangerRating && (
+              <div className={`flex items-center gap-3 mb-4 px-3 py-2 rounded border text-sm ${difficultyStyles(dangerRating.tier)}`}>
+                <span className="font-display font-bold uppercase tracking-wider">
+                  {dangerRating.tier}
+                </span>
+                <span className="opacity-50">|</span>
+                <span>{dangerRating.monsterCount} monster{dangerRating.monsterCount !== 1 ? "s" : ""} ×{dangerRating.multiplier}</span>
+                <span className="opacity-50">|</span>
+                <span>{dangerRating.rawXp.toLocaleString()} XP raw → <strong>{dangerRating.adjustedXp.toLocaleString()} XP adjusted</strong></span>
+              </div>
+            )}
 
             {/* Participants */}
             <h3 className="text-ink-600 text-sm font-display font-semibold mb-2 uppercase tracking-wide">
