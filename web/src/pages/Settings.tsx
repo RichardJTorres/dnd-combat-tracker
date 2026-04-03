@@ -69,23 +69,23 @@ export default function Settings() {
     setTimeout(() => setSavedMsg(""), 2000);
   }
 
-  if (!appSettings) return <div className="text-gray-500 p-8">Loading...</div>;
+  if (!appSettings) return <div className="text-ink-400 italic p-8">Loading...</div>;
 
   return (
     <div className="max-w-xl mx-auto">
-      <h2 className="text-xl font-bold text-red-300 mb-6">AI Settings</h2>
+      <h2 className="text-xl font-display font-bold text-crimson-600 mb-6">AI Settings</h2>
 
       {/* Provider selection */}
-      <section className="bg-gray-900 border border-gray-800 rounded-lg p-5 mb-4">
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">LLM Provider</h3>
+      <section className="panel p-5 mb-4">
+        <h3 className="text-sm font-display font-semibold text-ink-800 mb-3 uppercase tracking-wide">LLM Provider</h3>
         <div className="space-y-2">
           {providers.map((p) => (
             <label
               key={p.id}
               className={`flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors ${
                 appSettings.provider === p.id
-                  ? "bg-red-900/30 border-red-700"
-                  : "bg-gray-800 border-gray-700 hover:border-gray-600"
+                  ? "bg-crimson-900/20 border-crimson-500"
+                  : "bg-parchment-200 border-leather-600 hover:border-leather-400"
               }`}
             >
               <input
@@ -94,14 +94,14 @@ export default function Settings() {
                 value={p.id}
                 checked={appSettings.provider === p.id}
                 onChange={() => setProvider(p.id)}
-                className="accent-red-500"
+                className="accent-crimson-600"
               />
-              <span className="flex-1 text-sm">{p.label}</span>
+              <span className="flex-1 text-sm text-ink-800">{p.label}</span>
               <span
                 className={`text-xs px-2 py-0.5 rounded ${
                   p.configured
-                    ? "bg-green-900 text-green-300"
-                    : "bg-gray-700 text-gray-500"
+                    ? "bg-hp-good/80 text-parchment-100"
+                    : "bg-parchment-300 text-ink-400 border border-leather-600"
                 }`}
               >
                 {p.configured ? "configured" : "no key"}
@@ -109,27 +109,27 @@ export default function Settings() {
             </label>
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-ink-400 italic mt-3">
           Set API keys via environment variables:{" "}
-          <code className="text-gray-400">ANTHROPIC_API_KEY</code>,{" "}
-          <code className="text-gray-400">GEMINI_API_KEY</code>,{" "}
-          <code className="text-gray-400">OPENAI_API_KEY</code>.
+          <code>ANTHROPIC_API_KEY</code>,{" "}
+          <code>GEMINI_API_KEY</code>,{" "}
+          <code>OPENAI_API_KEY</code>.
           Ollama requires a running local server.
         </p>
       </section>
 
       {/* Model selection */}
-      <section className="bg-gray-900 border border-gray-800 rounded-lg p-5 mb-4">
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">Model</h3>
+      <section className="panel p-5 mb-4">
+        <h3 className="text-sm font-display font-semibold text-ink-800 mb-3 uppercase tracking-wide">Model</h3>
         {models.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-ink-400 italic">
             {providers.find((p) => p.id === appSettings.provider)?.configured
               ? "Loading models..."
               : "Configure an API key to see available models."}
           </p>
         ) : (
           <select
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+            className="input-fantasy w-full"
             value={appSettings.model ?? ""}
             onChange={(e) => setModel(e.target.value)}
           >
@@ -141,7 +141,7 @@ export default function Settings() {
           </select>
         )}
         {appSettings.model && models.length === 0 && (
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-ink-400 mt-2">
             Current: <code>{appSettings.model}</code>
           </p>
         )}
@@ -149,15 +149,15 @@ export default function Settings() {
 
       {/* Status */}
       <div className="flex items-center gap-3 text-sm">
-        {saving && <span className="text-gray-400">Saving...</span>}
-        {savedMsg && <span className="text-green-400">{savedMsg}</span>}
+        {saving && <span className="text-ink-400 italic">Saving...</span>}
+        {savedMsg && <span className="text-hp-good font-semibold">{savedMsg}</span>}
       </div>
 
       {/* Current config summary */}
-      <section className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-4 text-xs text-gray-500">
-        <div>Active provider: <span className="text-gray-300">{appSettings.provider}</span></div>
+      <section className="panel-inset p-4 mt-4 text-xs text-ink-400">
+        <div>Active provider: <span className="text-ink-800 font-semibold">{appSettings.provider}</span></div>
         {appSettings.model && (
-          <div>Active model: <span className="text-gray-300">{appSettings.model}</span></div>
+          <div>Active model: <span className="text-ink-800 font-semibold">{appSettings.model}</span></div>
         )}
       </section>
     </div>

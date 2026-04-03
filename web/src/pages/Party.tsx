@@ -58,11 +58,11 @@ function modifier(score: number): string {
 
 function hpColor(current: number, max: number): string {
   const pct = max > 0 ? current / max : 0;
-  if (pct <= 0) return "text-gray-500";
-  if (pct < 0.25) return "text-red-400";
-  if (pct < 0.5) return "text-orange-400";
-  if (pct < 0.75) return "text-yellow-400";
-  return "text-green-400";
+  if (pct <= 0) return "text-ink-400";
+  if (pct < 0.25) return "text-crimson-400";
+  if (pct < 0.5) return "text-hp-low";
+  if (pct < 0.75) return "text-hp-medium";
+  return "text-hp-good";
 }
 
 export default function Party() {
@@ -111,13 +111,13 @@ export default function Party() {
       <div className="w-64 flex-shrink-0 flex flex-col gap-3">
         <button
           onClick={startNew}
-          className="w-full bg-red-800 hover:bg-red-700 text-white text-sm px-3 py-2 rounded font-medium"
+          className="w-full bg-crimson-700 hover:bg-crimson-600 text-parchment-50 text-sm px-3 py-2 rounded font-display font-medium"
         >
           + Add Character
         </button>
         <div className="space-y-2">
           {characters.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-8">
+            <p className="text-ink-400 italic text-sm text-center py-8">
               No characters yet
             </p>
           )}
@@ -127,12 +127,12 @@ export default function Party() {
               onClick={() => { setSelected(c); setEditing(null); }}
               className={`w-full text-left px-3 py-3 rounded border transition-colors ${
                 selected?.id === c.id
-                  ? "bg-red-900/40 border-red-700"
-                  : "bg-gray-900 border-gray-800 hover:border-gray-600"
+                  ? "bg-crimson-900/30 border-crimson-500"
+                  : "bg-parchment-100 border-leather-600 hover:border-leather-400"
               }`}
             >
-              <div className="font-medium text-sm">{c.name}</div>
-              <div className="text-xs text-gray-400">
+              <div className="font-display font-medium text-sm text-ink-900">{c.name}</div>
+              <div className="text-xs text-ink-600 italic">
                 Level {c.level} {c.character_class}
                 {c.player_name && ` · ${c.player_name}`}
               </div>
@@ -145,7 +145,7 @@ export default function Party() {
       </div>
 
       {/* Detail / edit panel */}
-      <div className="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-5">
+      <div className="flex-1 panel p-5">
         {editing ? (
           <CharacterForm
             data={editing}
@@ -160,7 +160,7 @@ export default function Party() {
             onDelete={() => del(selected.id)}
           />
         ) : (
-          <div className="text-gray-500 text-center mt-20">
+          <div className="text-ink-400 italic text-center mt-20">
             Select a character or add a new one
           </div>
         )}
@@ -191,16 +191,16 @@ function CharacterDetail({
     <div>
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-red-300">{c.name}</h2>
-          <p className="text-gray-400 text-sm">
+          <h2 className="text-2xl font-display font-bold text-crimson-600">{c.name}</h2>
+          <p className="text-ink-600 italic text-sm">
             {c.race ? `${c.race} ` : ""}Level {c.level} {c.character_class}
             {c.subclass ? ` (${c.subclass})` : ""}
             {c.player_name && ` · Played by ${c.player_name}`}
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={onEdit} className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded">Edit</button>
-          <button onClick={onDelete} className="bg-red-900 hover:bg-red-800 text-white text-sm px-3 py-1.5 rounded">Remove</button>
+          <button onClick={onEdit} className="bg-parchment-300 hover:bg-parchment-400 text-ink-900 border border-leather-500 text-sm px-3 py-1.5 rounded">Edit</button>
+          <button onClick={onDelete} className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 text-sm px-3 py-1.5 rounded">Remove</button>
         </div>
       </div>
 
@@ -212,19 +212,19 @@ function CharacterDetail({
         <StatBox label="Passive Perception" value={String(c.passive_perception)} />
       </div>
 
-      <div className="grid grid-cols-6 gap-2 bg-gray-800 rounded p-3 mb-4 text-center">
+      <div className="grid grid-cols-6 gap-2 panel-inset p-3 mb-4 text-center">
         {stats.map(([label, score]) => (
           <div key={label}>
-            <div className="text-xs text-gray-400 font-medium">{label}</div>
-            <div className="text-lg font-bold">{score}</div>
-            <div className="text-xs text-gray-400">{modifier(score)}</div>
+            <div className="text-xs text-ink-600 font-display font-medium">{label}</div>
+            <div className="text-lg font-bold text-ink-900">{score}</div>
+            <div className="text-xs text-crimson-600 font-semibold">{modifier(score)}</div>
           </div>
         ))}
       </div>
 
       {c.notes && (
-        <div className="bg-gray-800 rounded p-3 text-sm text-gray-300">
-          <div className="font-semibold text-gray-200 mb-1">Notes</div>
+        <div className="panel-inset p-3 text-sm text-ink-700">
+          <div className="font-display font-semibold text-ink-900 mb-1">Notes</div>
           {c.notes}
         </div>
       )}
@@ -234,9 +234,9 @@ function CharacterDetail({
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-800 rounded p-2 text-center">
-      <div className="text-xs text-gray-400">{label}</div>
-      <div className="font-semibold">{value}</div>
+    <div className="bg-parchment-200 border border-leather-600 rounded p-2 text-center">
+      <div className="text-xs text-ink-400 font-display uppercase">{label}</div>
+      <div className="font-semibold text-ink-900">{value}</div>
     </div>
   );
 }
@@ -258,7 +258,7 @@ function CharacterForm({
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-red-300 mb-4">
+      <h2 className="text-xl font-display font-bold text-crimson-600 mb-4">
         {data.id ? "Edit Character" : "New Character"}
       </h2>
 
@@ -274,7 +274,7 @@ function CharacterForm({
         <div>
           <Label>Class</Label>
           <select
-            className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
+            className="input-fantasy w-full"
             value={data.character_class ?? "Fighter"}
             onChange={(e) => set("character_class", e.target.value)}
           >
@@ -295,7 +295,7 @@ function CharacterForm({
         </div>
       </div>
 
-      <h3 className="text-gray-400 text-sm font-semibold mb-2">Combat Stats</h3>
+      <h3 className="text-ink-600 text-sm font-display font-semibold mb-2 uppercase tracking-wide">Combat Stats</h3>
       <div className="grid grid-cols-4 gap-3 mb-4">
         <div>
           <Label>Max HP</Label>
@@ -323,7 +323,7 @@ function CharacterForm({
         </div>
       </div>
 
-      <h3 className="text-gray-400 text-sm font-semibold mb-2">Ability Scores</h3>
+      <h3 className="text-ink-600 text-sm font-display font-semibold mb-2 uppercase tracking-wide">Ability Scores</h3>
       <div className="grid grid-cols-6 gap-2 mb-4">
         {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map((stat) => (
           <div key={stat} className="text-center">
@@ -336,28 +336,28 @@ function CharacterForm({
       <div className="mb-4">
         <Label>Notes</Label>
         <textarea
-          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600 h-20 resize-none"
+          className="w-full bg-parchment-300 border border-leather-500 rounded px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:border-gold-400 h-20 resize-none"
           value={data.notes ?? ""}
           onChange={(e) => set("notes", e.target.value)}
         />
       </div>
 
       <div className="flex gap-2">
-        <button onClick={onSave} className="bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium">Save</button>
-        <button onClick={onCancel} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium">Cancel</button>
+        <button onClick={onSave} className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 px-4 py-2 rounded text-sm font-medium">Save</button>
+        <button onClick={onCancel} className="bg-parchment-300 hover:bg-parchment-400 text-ink-900 border border-leather-500 px-4 py-2 rounded text-sm font-medium">Cancel</button>
       </div>
     </div>
   );
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-gray-400 mb-1">{children}</div>;
+  return <div className="text-xs text-ink-600 font-display uppercase tracking-wide mb-1">{children}</div>;
 }
 
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input
-      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+      className="input-fantasy w-full"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -369,7 +369,7 @@ function NumInput({ value, onChange, min = 0, max = 999 }: { value: number; onCh
   return (
     <input
       type="number"
-      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+      className="input-fantasy w-full"
       value={value}
       min={min}
       max={max}

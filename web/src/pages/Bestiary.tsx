@@ -227,42 +227,42 @@ export default function Bestiary() {
       <div className="w-72 flex-shrink-0 flex flex-col gap-3">
         <div className="flex gap-2">
           <input
-            className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+            className="input-fantasy flex-1"
             placeholder="Search creatures..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <button
             onClick={startNew}
-            className="bg-red-800 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded"
+            className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 text-sm px-3 py-1.5 rounded"
           >
             + Add
           </button>
         </div>
 
         {/* D&D API Import */}
-        <div className="border border-gray-700 rounded overflow-hidden">
+        <div className="border border-leather-500 rounded overflow-hidden">
           <button
             onClick={() => setShowImport((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 text-sm text-gray-300"
+            className="w-full flex items-center justify-between px-3 py-2 bg-parchment-200 hover:bg-parchment-300 text-sm text-ink-800 border-b border-leather-500"
           >
             <span>📥 Import from SRD</span>
-            <span className="text-gray-500">{showImport ? "▲" : "▼"}</span>
+            <span className="text-ink-400">{showImport ? "▲" : "▼"}</span>
           </button>
           {showImport && (
-            <div className="p-2 bg-gray-900">
+            <div className="p-2 bg-parchment-100">
               <input
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600 mb-2"
+                className="input-fantasy w-full mb-2"
                 placeholder="Search D&D monsters..."
                 value={apiSearch}
                 onChange={(e) => handleApiSearchChange(e.target.value)}
                 autoFocus
               />
               {apiLoading && (
-                <div className="text-xs text-gray-500 text-center py-2">Searching...</div>
+                <div className="text-xs text-ink-400 italic text-center py-2">Searching...</div>
               )}
               {!apiLoading && apiResults.length === 0 && apiSearch && (
-                <div className="text-xs text-gray-500 text-center py-2">No results</div>
+                <div className="text-xs text-ink-400 italic text-center py-2">No results</div>
               )}
               <div className="max-h-48 overflow-y-auto space-y-0.5 scrollbar-thin">
                 {apiResults.map((m) => (
@@ -270,10 +270,10 @@ export default function Bestiary() {
                     key={m.index}
                     onClick={() => importMonster(m.index)}
                     disabled={importing === m.index}
-                    className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-700 disabled:opacity-50 flex items-center justify-between"
+                    className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-parchment-200 text-ink-800 disabled:opacity-50 flex items-center justify-between"
                   >
                     <span>{m.name}</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-ink-400">
                       {importing === m.index ? "importing..." : "import"}
                     </span>
                   </button>
@@ -282,21 +282,22 @@ export default function Bestiary() {
             </div>
           )}
         </div>
+
         {/* AI monster generation */}
-        <div className="border border-gray-700 rounded overflow-hidden">
+        <div className="border border-leather-500 rounded overflow-hidden">
           <button
             onClick={() => { setShowAiPanel((v) => !v); setAiPreview(null); setAiError(null); }}
-            className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 text-sm text-gray-300"
+            className="w-full flex items-center justify-between px-3 py-2 bg-parchment-200 hover:bg-parchment-300 text-sm text-ink-800 border-b border-leather-500"
           >
             <span>✨ Generate with AI</span>
-            <span className="text-gray-500">{showAiPanel ? "▲" : "▼"}</span>
+            <span className="text-ink-400">{showAiPanel ? "▲" : "▼"}</span>
           </button>
           {showAiPanel && (
-            <div className="p-2 bg-gray-900 space-y-2">
+            <div className="p-2 bg-parchment-100 space-y-2">
               <div>
-                <div className="text-xs text-gray-400 mb-1">Challenge Rating</div>
+                <div className="text-xs text-ink-600 font-display uppercase tracking-wide mb-1">Challenge Rating</div>
                 <select
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-red-600"
+                  className="input-fantasy w-full"
                   value={aiCr}
                   onChange={(e) => setAiCr(parseFloat(e.target.value))}
                 >
@@ -306,25 +307,25 @@ export default function Bestiary() {
                 </select>
               </div>
               <textarea
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none h-24"
+                className="w-full bg-parchment-300 border border-leather-500 rounded px-3 py-2 text-sm text-ink-900 focus:outline-none focus:border-gold-400 resize-none h-24"
                 placeholder="Describe your monster... e.g. 'An undead pirate captain who commands ghostly crew and wields a cursed cutlass'"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
               {aiError && (
-                <p className="text-xs text-red-400">{aiError}</p>
+                <p className="text-xs text-crimson-400">{aiError}</p>
               )}
               <button
                 onClick={generateWithAi}
                 disabled={aiGenerating || !aiPrompt.trim()}
-                className="w-full bg-red-800 hover:bg-red-700 disabled:opacity-40 text-white text-sm px-3 py-1.5 rounded font-medium"
+                className="w-full bg-crimson-700 hover:bg-crimson-600 disabled:opacity-40 text-parchment-50 text-sm px-3 py-1.5 rounded font-medium"
               >
                 {aiGenerating ? "Generating..." : aiPreview ? "Regenerate" : "Generate Monster"}
               </button>
               {aiPreview && (
                 <button
                   onClick={saveAiCreature}
-                  className="w-full bg-green-800 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded font-medium"
+                  className="w-full bg-hp-good hover:bg-green-800 text-parchment-50 text-sm px-3 py-1.5 rounded font-medium"
                 >
                   ✓ Save to Bestiary
                 </button>
@@ -334,7 +335,7 @@ export default function Bestiary() {
         </div>
 
         <select
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
+          className="input-fantasy w-full"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >
@@ -348,7 +349,7 @@ export default function Bestiary() {
 
         <div className="flex-1 overflow-y-auto space-y-1 scrollbar-thin">
           {creatures.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-8">
+            <p className="text-ink-400 italic text-sm text-center py-8">
               No creatures yet. Add one!
             </p>
           )}
@@ -358,12 +359,12 @@ export default function Bestiary() {
               onClick={() => { setSelected(c); setEditing(null); }}
               className={`w-full text-left px-3 py-2 rounded border text-sm transition-colors ${
                 selected?.id === c.id
-                  ? "bg-red-900/40 border-red-700 text-red-200"
-                  : "bg-gray-900 border-gray-800 hover:border-gray-600 text-gray-300"
+                  ? "bg-crimson-900/30 border-crimson-500 text-crimson-400"
+                  : "bg-parchment-100 border-leather-600 hover:border-leather-400 text-ink-800"
               }`}
             >
               <div className="font-medium">{c.name}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-ink-400">
                 CR {crLabel(c.cr)} · {c.creature_type} · HP {c.hp} · AC {c.ac}
               </div>
             </button>
@@ -372,7 +373,7 @@ export default function Bestiary() {
       </div>
 
       {/* Detail / edit panel */}
-      <div className="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-5 overflow-y-auto scrollbar-thin">
+      <div className="flex-1 panel p-5 overflow-y-auto scrollbar-thin">
         {editing ? (
           <CreatureForm
             data={editing}
@@ -382,10 +383,10 @@ export default function Bestiary() {
           />
         ) : aiPreview ? (
           <div>
-            <div className="flex items-center gap-2 mb-4 bg-red-950/40 border border-red-800 rounded px-3 py-2 text-sm">
-              <span className="text-red-400">✨</span>
-              <span className="text-red-200 font-medium">AI Preview — not yet saved</span>
-              <span className="text-gray-500 ml-auto text-xs">Tweak your prompt and regenerate, or save when ready.</span>
+            <div className="flex items-center gap-2 mb-4 bg-crimson-900/20 border border-crimson-500 rounded px-3 py-2 text-sm">
+              <span className="text-crimson-400">✨</span>
+              <span className="text-crimson-600 font-medium">AI Preview — not yet saved</span>
+              <span className="text-ink-400 ml-auto text-xs">Tweak your prompt and regenerate, or save when ready.</span>
             </div>
             <CreatureDetail
               creature={aiPreview as Creature}
@@ -401,7 +402,7 @@ export default function Bestiary() {
             onDelete={() => del(selected.id)}
           />
         ) : (
-          <div className="text-gray-500 text-center mt-20">
+          <div className="text-ink-400 italic text-center mt-20">
             Select a creature or add a new one
           </div>
         )}
@@ -434,8 +435,8 @@ function CreatureDetail({
     <div>
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-red-300">{creature.name}</h2>
-          <p className="text-gray-400 text-sm">
+          <h2 className="text-2xl font-display font-bold text-crimson-600">{creature.name}</h2>
+          <p className="text-ink-600 italic text-sm">
             {creature.size} {creature.creature_type}
             {creature.source && ` · ${creature.source}`}
           </p>
@@ -444,21 +445,21 @@ function CreatureDetail({
           {onSave && (
             <button
               onClick={onSave}
-              className="bg-green-800 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded font-medium"
+              className="bg-hp-good hover:bg-green-800 text-parchment-50 text-sm px-3 py-1.5 rounded font-medium"
             >
               ✓ Save to Bestiary
             </button>
           )}
           <button
             onClick={onEdit}
-            className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded"
+            className="bg-parchment-300 hover:bg-parchment-400 text-ink-900 border border-leather-500 text-sm px-3 py-1.5 rounded"
           >
             {onSave ? "Edit before saving" : "Edit"}
           </button>
           {!onSave && (
             <button
               onClick={onDelete}
-              className="bg-red-900 hover:bg-red-800 text-white text-sm px-3 py-1.5 rounded"
+              className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 text-sm px-3 py-1.5 rounded"
             >
               Delete
             </button>
@@ -474,12 +475,12 @@ function CreatureDetail({
       </div>
 
       {/* Ability scores */}
-      <div className="grid grid-cols-6 gap-2 bg-gray-800 rounded p-3 mb-4 text-center">
+      <div className="grid grid-cols-6 gap-2 panel-inset p-3 mb-4 text-center">
         {stats.map(([label, score]) => (
           <div key={label}>
-            <div className="text-xs text-gray-400 font-medium">{label}</div>
-            <div className="text-lg font-bold">{score}</div>
-            <div className="text-xs text-gray-400">{modifier(score)}</div>
+            <div className="text-xs text-ink-600 font-display">{label}</div>
+            <div className="text-lg font-bold text-ink-900">{score}</div>
+            <div className="text-xs text-crimson-600 font-semibold">{modifier(score)}</div>
           </div>
         ))}
       </div>
@@ -504,8 +505,8 @@ function CreatureDetail({
       {creature.actions && renderJsonList("Actions", creature.actions)}
 
       {creature.notes && (
-        <div className="mt-4 bg-gray-800 rounded p-3 text-sm text-gray-300">
-          <div className="font-semibold text-gray-200 mb-1">Notes</div>
+        <div className="mt-4 panel-inset p-3 text-sm text-ink-700">
+          <div className="font-display font-semibold text-ink-900 mb-1">Notes</div>
           {creature.notes}
         </div>
       )}
@@ -515,9 +516,9 @@ function CreatureDetail({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-800 rounded p-2">
-      <div className="text-xs text-gray-400">{label}</div>
-      <div className="font-semibold text-sm">{value}</div>
+    <div className="panel-inset p-2">
+      <div className="text-xs text-ink-400 font-display uppercase">{label}</div>
+      <div className="font-semibold text-sm text-ink-900">{value}</div>
     </div>
   );
 }
@@ -525,8 +526,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2 text-sm mb-1">
-      <span className="font-medium text-gray-300 min-w-36">{label}:</span>
-      <span className="text-gray-400">{value}</span>
+      <span className="font-display font-medium text-ink-900 min-w-36">{label}:</span>
+      <span className="text-ink-600">{value}</span>
     </div>
   );
 }
@@ -541,13 +542,13 @@ function renderJsonList(title: string, json: string) {
   if (!Array.isArray(items) || items.length === 0) return null;
   return (
     <div className="mt-3">
-      <h3 className="text-red-400 font-semibold border-b border-red-900 pb-1 mb-2">
+      <h3 className="text-crimson-600 font-display font-semibold border-b border-leather-500 pb-1 mb-2">
         {title}
       </h3>
       {items.map((item, i) => (
         <div key={i} className="mb-2 text-sm">
-          <span className="font-semibold text-gray-200">{item.name}. </span>
-          <span className="text-gray-400">{item.description}</span>
+          <span className="font-display font-semibold italic text-ink-900">{item.name}. </span>
+          <span className="text-ink-600">{item.description}</span>
         </div>
       ))}
     </div>
@@ -571,7 +572,7 @@ function CreatureForm({
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-red-300 mb-4">
+      <h2 className="text-xl font-display font-bold text-crimson-600 mb-4">
         {data.id ? "Edit Creature" : "New Creature"}
       </h2>
 
@@ -583,7 +584,7 @@ function CreatureForm({
         <div>
           <Label>Size</Label>
           <select
-            className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
+            className="input-fantasy w-full"
             value={data.size ?? "Medium"}
             onChange={(e) => set("size", e.target.value)}
           >
@@ -593,7 +594,7 @@ function CreatureForm({
         <div>
           <Label>Type</Label>
           <select
-            className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
+            className="input-fantasy w-full"
             value={data.creature_type ?? "humanoid"}
             onChange={(e) => set("creature_type", e.target.value)}
           >
@@ -603,7 +604,7 @@ function CreatureForm({
         <div>
           <Label>CR</Label>
           <select
-            className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm"
+            className="input-fantasy w-full"
             value={data.cr ?? 1}
             onChange={(e) => set("cr", parseFloat(e.target.value))}
           >
@@ -635,7 +636,7 @@ function CreatureForm({
       </div>
 
       {/* Ability scores */}
-      <h3 className="text-gray-400 text-sm font-semibold mb-2">Ability Scores</h3>
+      <h3 className="text-ink-600 text-sm font-display font-semibold mb-2 uppercase tracking-wide">Ability Scores</h3>
       <div className="grid grid-cols-6 gap-2 mb-4">
         {(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"] as const).map((stat) => (
           <div key={stat} className="text-center">
@@ -680,7 +681,7 @@ function CreatureForm({
       <div className="mb-4">
         <Label>Notes</Label>
         <textarea
-          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600 h-20 resize-none"
+          className="w-full bg-parchment-300 border border-leather-500 rounded px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:border-gold-400 h-20 resize-none"
           value={data.notes ?? ""}
           onChange={(e) => set("notes", e.target.value)}
         />
@@ -689,13 +690,13 @@ function CreatureForm({
       <div className="flex gap-2">
         <button
           onClick={onSave}
-          className="bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium"
+          className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 px-4 py-2 rounded text-sm font-medium"
         >
           Save
         </button>
         <button
           onClick={onCancel}
-          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-medium"
+          className="bg-parchment-300 hover:bg-parchment-400 text-ink-900 border border-leather-500 px-4 py-2 rounded text-sm font-medium"
         >
           Cancel
         </button>
@@ -705,7 +706,7 @@ function CreatureForm({
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs text-gray-400 mb-1">{children}</div>;
+  return <div className="text-xs text-ink-600 font-display uppercase tracking-wide mb-1">{children}</div>;
 }
 
 function Input({
@@ -719,7 +720,7 @@ function Input({
 }) {
   return (
     <input
-      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+      className="input-fantasy w-full"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -741,7 +742,7 @@ function NumInput({
   return (
     <input
       type="number"
-      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+      className="input-fantasy w-full"
       value={value}
       min={min}
       max={max}
