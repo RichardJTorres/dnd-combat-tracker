@@ -4,6 +4,7 @@ import json
 import re
 
 from dnd_combat_tracker.backends.base import BaseBackend
+from dnd_combat_tracker.backends.image_base import BaseImageBackend
 
 # DMG 2024 monster creation targets, keyed by CR.
 # Each entry: (prof_bonus, ac, hp_min, hp_max, attack_bonus, dmg_min, dmg_max, save_dc)
@@ -201,3 +202,29 @@ def generate_monster(backend: BaseBackend, prompt: str, cr: float) -> dict:
         raise MonsterGenerationError("Generated creature has no name")
 
     return _normalise(data, cr)
+
+
+_ART_STYLE = (
+    "grimdark dark fantasy, detailed fantasy creature art, "
+    "dramatic atmospheric lighting, dark moody palette, "
+    "dungeons and dragons monster illustration, highly detailed, "
+    "professional concept art, ominous, menacing"
+)
+
+_ART_NEGATIVE = (
+    "bright colors, cartoon, anime, cute, happy, cheerful, "
+    "low quality, blurry, watermark, text, logo"
+)
+
+
+def generate_monster_art(backend: BaseImageBackend, creature) -> bytes:
+    """
+    Generate a grimdark fantasy portrait for a creature.
+    Returns raw PNG bytes.
+    """
+    prompt = (
+        f'A {creature.size.lower()} {creature.creature_type} called "{creature.name}". '
+        f"{_ART_STYLE}. "
+        f"Negative: {_ART_NEGATIVE}."
+    )
+    return backend.generate_image(prompt)

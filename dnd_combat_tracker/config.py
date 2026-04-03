@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"
 
+    # Image generation
+    forge_image_host: str = "http://localhost:7860"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

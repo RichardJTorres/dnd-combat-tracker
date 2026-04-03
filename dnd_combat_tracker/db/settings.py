@@ -12,6 +12,10 @@ DEFAULTS = {
     "gemini_model": "gemini-2.5-flash",
     "openai_model": "gpt-4o",
     "ollama_model": "llama3.1",
+    # Image generation
+    "image_provider": "",  # empty = disabled
+    "gemini_image_model": "gemini-2.0-flash-exp-image-generation",
+    "forge_image_model": "sd_xl_base_1.0",
 }
 
 

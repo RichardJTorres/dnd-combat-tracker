@@ -26,6 +26,7 @@ interface Creature {
   damage_resistances: string | null;
   damage_immunities: string | null;
   condition_immunities: string | null;
+  art_data: string | null;
 }
 
 const BLANK: Partial<Creature> = {
@@ -101,6 +102,10 @@ export default function Bestiary() {
   const [aiPreview, setAiPreview] = useState<Partial<Creature> | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  // Image generation state
+  const [imageConfigured, setImageConfigured] = useState(false);
+  const [artGenerating, setArtGenerating] = useState<number | null>(null); // creature id
+
   async function load() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -109,9 +114,21 @@ export default function Bestiary() {
     setCreatures(await r.json());
   }
 
+  async function checkImageConfig() {
+    const providers = await fetch("/api/settings/image-providers").then((r) => r.json());
+    const settings = await fetch("/api/settings/image").then((r) => r.json());
+    const configured = settings.provider &&
+      providers.some((p: { id: string; configured: boolean }) => p.id === settings.provider && p.configured);
+    setImageConfigured(!!configured);
+  }
+
   useEffect(() => {
     load();
   }, [search, typeFilter]);
+
+  useEffect(() => {
+    checkImageConfig();
+  }, []);
 
   async function save() {
     if (!editing) return;
@@ -219,6 +236,26 @@ export default function Bestiary() {
     setShowAiPanel(false);
     load();
     setSelected(saved);
+  }
+
+  async function generateArt(creatureId: number) {
+    setArtGenerating(creatureId);
+    try {
+      const r = await fetch("/api/ai/generate-monster-art", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creature_id: creatureId }),
+      });
+      if (!r.ok) return;
+      const { art_data } = await r.json();
+      // Update selected creature and list with new art_data
+      setSelected((prev) => prev ? { ...prev, art_data } : prev);
+      setCreatures((prev) =>
+        prev.map((c) => c.id === creatureId ? { ...c, art_data } : c)
+      );
+    } finally {
+      setArtGenerating(null);
+    }
   }
 
   return (
@@ -399,6 +436,9 @@ export default function Bestiary() {
             creature={selected}
             onEdit={() => startEdit(selected)}
             onDelete={() => del(selected.id)}
+            imageConfigured={imageConfigured}
+            onGenerateArt={() => generateArt(selected.id)}
+            artGenerating={artGenerating === selected.id}
           />
         ) : (
           <div className="text-gray-500 text-center mt-20">
@@ -415,11 +455,17 @@ function CreatureDetail({
   onEdit,
   onDelete,
   onSave,
+  imageConfigured,
+  onGenerateArt,
+  artGenerating,
 }: {
   creature: Creature;
   onEdit: () => void;
   onDelete: () => void;
   onSave?: () => void;
+  imageConfigured?: boolean;
+  onGenerateArt?: () => void;
+  artGenerating?: boolean;
 }) {
   const stats: [string, number][] = [
     ["STR", creature.strength],
@@ -449,6 +495,15 @@ function CreatureDetail({
               ✓ Save to Bestiary
             </button>
           )}
+          {imageConfigured && onGenerateArt && !onSave && (
+            <button
+              onClick={onGenerateArt}
+              disabled={artGenerating}
+              className="bg-purple-900 hover:bg-purple-800 disabled:opacity-40 text-white text-sm px-3 py-1.5 rounded"
+            >
+              {artGenerating ? "Generating art..." : creature.art_data ? "Regenerate Art" : "Generate Art"}
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded"
@@ -465,6 +520,16 @@ function CreatureDetail({
           )}
         </div>
       </div>
+
+      {creature.art_data && (
+        <div className="mb-4">
+          <img
+            src={`data:image/png;base64,${creature.art_data}`}
+            alt={creature.name}
+            className="rounded-lg w-full max-h-64 object-cover border border-gray-700"
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3 mb-4">
         <Stat label="Armor Class" value={`${creature.ac}${creature.ac_notes ? ` (${creature.ac_notes})` : ""}`} />

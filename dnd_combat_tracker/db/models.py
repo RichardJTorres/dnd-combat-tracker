@@ -46,6 +46,7 @@ class Creature(SQLModel, table=True):
 
     source: Optional[str] = None  # e.g. "Monster Manual", "Custom"
     notes: Optional[str] = None
+    art_data: Optional[str] = None  # base64-encoded PNG
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @property
