@@ -4,13 +4,39 @@
 
 @layer base {
   body {
-    @apply bg-gray-950 text-gray-100 min-h-screen;
+    @apply bg-parchment-50 text-ink-800 min-h-screen font-body;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+
+  select, option {
+    @apply bg-parchment-300 text-ink-800;
+  }
+
+  code {
+    @apply font-mono text-crimson-600 bg-parchment-200 px-1 rounded;
   }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.gray.600') transparent;
+    scrollbar-color: theme('colors.leather.500') theme('colors.parchment.200');
+  }
+
+  .panel {
+    @apply bg-parchment-100 border border-leather-400 rounded-lg;
+  }
+
+  .panel-inset {
+    @apply bg-parchment-200 border border-leather-600 rounded;
+  }
+
+  .input-fantasy {
+    @apply bg-parchment-300 border border-leather-500 rounded px-3 py-1.5 text-sm
+           text-ink-900 placeholder-ink-400
+           focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400/40;
   }
 }

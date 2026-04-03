@@ -130,7 +130,6 @@ export default function Encounters({
     if (!selected) return;
     setLaunching(true);
 
-    // Build combatants from participants
     const combatants: Record<string, unknown>[] = [];
 
     for (const p of participants) {
@@ -143,7 +142,7 @@ export default function Encounters({
             name: `${creature.name}${label}`,
             combatant_type: "creature",
             source_id: creature.id,
-            initiative: 0, // DM will set these
+            initiative: 0,
             max_hp: creature.hp,
             current_hp: creature.hp,
             ac: creature.ac,
@@ -189,7 +188,7 @@ export default function Encounters({
       <div className="w-64 flex-shrink-0 flex flex-col gap-3">
         <div className="flex gap-2">
           <input
-            className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-600"
+            className="input-fantasy flex-1"
             placeholder="New encounter name..."
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -197,7 +196,7 @@ export default function Encounters({
           />
           <button
             onClick={createEncounter}
-            className="bg-red-800 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded"
+            className="bg-crimson-700 hover:bg-crimson-600 text-parchment-50 text-sm px-3 py-1.5 rounded"
           >
             +
           </button>
@@ -205,7 +204,7 @@ export default function Encounters({
 
         <div className="space-y-1 overflow-y-auto scrollbar-thin">
           {encounters.length === 0 && (
-            <p className="text-gray-500 text-sm text-center py-8">No encounters yet</p>
+            <p className="text-ink-400 italic text-sm text-center py-8">No encounters yet</p>
           )}
           {encounters.map((enc) => (
             <button
@@ -213,8 +212,8 @@ export default function Encounters({
               onClick={() => selectEncounter(enc)}
               className={`w-full text-left px-3 py-2 rounded border text-sm transition-colors ${
                 selected?.id === enc.id
-                  ? "bg-red-900/40 border-red-700 text-red-200"
-                  : "bg-gray-900 border-gray-800 hover:border-gray-600"
+                  ? "bg-crimson-900/30 border-crimson-500 text-crimson-400"
+                  : "bg-parchment-100 border-leather-600 hover:border-leather-400 text-ink-800"
               }`}
             >
               {enc.name}
@@ -224,26 +223,26 @@ export default function Encounters({
       </div>
 
       {/* Encounter detail */}
-      <div className="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-5">
+      <div className="flex-1 panel p-5">
         {!selected ? (
-          <div className="text-gray-500 text-center mt-20">
+          <div className="text-ink-400 italic text-center mt-20">
             Select or create an encounter
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-red-300">{selected.name}</h2>
+              <h2 className="text-xl font-display font-bold text-crimson-600">{selected.name}</h2>
               <div className="flex gap-2">
                 <button
                   onClick={launchCombat}
                   disabled={launching || participants.length === 0}
-                  className="bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white px-4 py-2 rounded text-sm font-medium"
+                  className="bg-crimson-600 hover:bg-crimson-500 disabled:opacity-40 text-parchment-50 px-4 py-2 rounded text-sm font-display uppercase tracking-wider"
                 >
                   {launching ? "Starting..." : "⚔️ Launch Combat"}
                 </button>
                 <button
                   onClick={() => deleteEncounter(selected.id)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm"
+                  className="bg-parchment-300 hover:bg-parchment-400 text-ink-900 border border-leather-500 px-3 py-2 rounded text-sm"
                 >
                   Delete
                 </button>
@@ -251,25 +250,25 @@ export default function Encounters({
             </div>
 
             {/* Participants */}
-            <h3 className="text-gray-400 text-sm font-semibold mb-2">
+            <h3 className="text-ink-600 text-sm font-display font-semibold mb-2 uppercase tracking-wide">
               Participants ({participants.length})
             </h3>
             <div className="space-y-1 mb-4">
               {participants.length === 0 && (
-                <p className="text-gray-500 text-sm">No participants yet. Add creatures or characters below.</p>
+                <p className="text-ink-400 italic text-sm">No participants yet. Add creatures or characters below.</p>
               )}
               {participants.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between bg-gray-800 rounded px-3 py-2 text-sm"
+                  className="flex items-center justify-between bg-parchment-200 border border-leather-600 rounded px-3 py-2 text-sm"
                 >
-                  <span className={p.participant_type === "character" ? "text-blue-300" : "text-gray-300"}>
+                  <span className={p.participant_type === "character" ? "text-azure-400" : "text-ink-800"}>
                     {p.participant_type === "character" ? "👤 " : "👾 "}
                     {participantLabel(p)}
                   </span>
                   <button
                     onClick={() => removeParticipant(p.id)}
-                    className="text-gray-500 hover:text-red-400 text-xs ml-2"
+                    className="text-ink-400 hover:text-crimson-500 text-xs ml-2"
                   >
                     ✕
                   </button>
@@ -278,11 +277,11 @@ export default function Encounters({
             </div>
 
             {/* Add participant */}
-            <div className="bg-gray-800 rounded p-3">
-              <h4 className="text-xs text-gray-400 font-semibold mb-2">Add Participant</h4>
+            <div className="panel-inset p-3">
+              <h4 className="text-xs text-ink-600 font-display font-semibold uppercase tracking-wide mb-2">Add Participant</h4>
               <div className="flex gap-2 flex-wrap">
                 <select
-                  className="bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm"
+                  className="input-fantasy"
                   value={addType}
                   onChange={(e) => {
                     setAddType(e.target.value as "creature" | "character");
@@ -294,7 +293,7 @@ export default function Encounters({
                 </select>
 
                 <select
-                  className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm"
+                  className="input-fantasy flex-1"
                   value={addId}
                   onChange={(e) => setAddId(parseInt(e.target.value) || "")}
                 >
@@ -315,7 +314,7 @@ export default function Encounters({
                 {addType === "creature" && (
                   <input
                     type="number"
-                    className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm"
+                    className="input-fantasy w-16"
                     value={addQty}
                     min={1}
                     max={20}
@@ -327,7 +326,7 @@ export default function Encounters({
                 <button
                   onClick={addParticipant}
                   disabled={addId === ""}
-                  className="bg-red-800 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1.5 rounded text-sm"
+                  className="bg-crimson-700 hover:bg-crimson-600 disabled:opacity-40 text-parchment-50 px-3 py-1.5 rounded text-sm"
                 >
                   Add
                 </button>

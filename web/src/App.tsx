@@ -29,8 +29,8 @@ export default function App() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center gap-4">
-        <h1 className="text-xl font-bold text-red-400 tracking-wide">
+      <header className="bg-leather-700 border-b-2 border-leather-400 shadow-md px-4 py-3 flex items-center gap-4">
+        <h1 className="text-xl font-display font-bold text-gold-400 tracking-widest uppercase">
           ⚔️ D&D Combat Tracker
         </h1>
         <nav className="flex gap-1 ml-4">
@@ -40,8 +40,8 @@ export default function App() {
               onClick={() => setPage(n.id)}
               className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                 page === n.id
-                  ? "bg-red-900/60 text-red-200 border border-red-700"
-                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+                  ? "bg-parchment-100 text-ink-900 border border-gold-400"
+                  : "text-parchment-200 hover:text-gold-300 hover:bg-leather-600"
               }`}
             >
               {n.icon} {n.label}
@@ -51,7 +51,7 @@ export default function App() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-4 bg-parchment-50">
         {page === "bestiary" && <Bestiary />}
         {page === "party" && <Party />}
         {page === "encounters" && <Encounters onLaunchCombat={launchCombat} />}
